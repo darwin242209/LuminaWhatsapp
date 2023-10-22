@@ -1,0 +1,6 @@
+whatsapp-web.js
+openai@^3.1.0
+qrcode-terminal
+fs
+axios
+firebase-admin
