@@ -15,7 +15,7 @@ const openai = new OpenAIApi(configuration);
 module.exports = openai;
 
 // Initialize Firebase
-const serviceAccount = require('/home/runner/Lumina-Whatsapp/lumina-ai-7d702-firebase-adminsdk-tltpt-b33ef2b1dd.json');
+const serviceAccount = require("/Volumes/Darwin's Drive/Devs/Whatsaap Development/lumina wasap/ws-lumina/LuminaWhatsapp/lumina-ai-7d702-firebase-adminsdk-tltpt-b33ef2b1dd.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: 'https://lumina-ai-7d702-default-rtdb.firebaseio.com',
