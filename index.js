@@ -1,21 +1,13 @@
 const { Client } = require('whatsapp-web.js');
-const { Configuration, OpenAIApi } = require("openai");
+const axios = require('axios');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
-const axios = require('axios');
 const admin = require('firebase-admin');
 
 const client = new Client();
 
-// Initialize the OpenAI API client
-const configuration = new Configuration({
-  apiKey: process.env.API,
-});
-const openai = new OpenAIApi(configuration);
-module.exports = openai;
-
 // Initialize Firebase
-const serviceAccount = require("/Volumes/Darwin's Drive/Devs/Whatsaap Development/lumina wasap/ws-lumina/LuminaWhatsapp/lumina-ai-7d702-firebase-adminsdk-tltpt-b33ef2b1dd.json");
+const serviceAccount = require('/workspace/LuminaWhatsapp/lumina-ai-7d702-firebase-adminsdk-tltpt-b33ef2b1dd.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: 'https://lumina-ai-7d702-default-rtdb.firebaseio.com',
@@ -31,7 +23,11 @@ client.on('qr', (qrCode) => {
 
 client.on('authenticated', (session) => {
   console.log('Authenticated.');
-  fs.writeFileSync('./session.json', JSON.stringify(session));
+  if (session) {
+    fs.writeFileSync('/workspace/LuminaWhatsapp/session.json', JSON.stringify(session));
+  } else {
+    console.error('Session data is undefined.');
+  }
 });
 
 client.on('ready', () => {
@@ -44,16 +40,19 @@ client.on('message', async (message) => {
 
     if (userMessage.startsWith('hi lumina') || userMessage.startsWith('hai lumina')) {
       const prompt = userMessage.replace(/hi lumina|hai lumina/i, '').trim();
-
-      // Send the user's prompt to OpenAI for a response
+      message.reply('🔄 Sila Tunggu Sebentar Sementara Saya Menghubungi Server Lumina…');
       try {
-        const openaiResponse = await openai.createCompletion({
+        const openaiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
           model: 'gpt-3.5-turbo',
-          prompt,
-          max_tokens: 1000, // Adjust as needed
+          messages: [{ role: 'system', content: 'You are a helpful assistant.' }, { role: 'user', content: prompt }],
+          max_tokens: 100, // Adjust as needed
+        }, {
+          headers: {
+            'Authorization': 'Bearer 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',
+          },
         });
 
-        const reply = openaiResponse.data.choices[0].text;
+        const reply = openaiResponse.data.choices[0].message.content;
         message.reply(reply);
       } catch (error) {
         console.error('Error sending message to OpenAI:', error);
@@ -62,32 +61,32 @@ client.on('message', async (message) => {
     } else if (userMessage.includes('gambar') || userMessage.includes('picture')) {
       const prompt = userMessage.replace('gambar', '').replace('picture', '').trim();
 
-      // Send the user's prompt to DALL-E for image generation
       try {
-        const dalleResponse = await openai.createCompletion({
+        const dalleResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
           model: 'image-alpha-001',
-          prompt,
-          max_tokens: 1000, // Adjust as needed
+          messages: [{ role: 'system', content: 'You are a helpful assistant.' }, { role: 'user', content: prompt }],
+          max_tokens: 100, // Adjust as needed
+        }, {
+          headers: {
+            'Authorization': 'Bearer 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',
+          },
         });
 
-        const imageURL = dalleResponse.data.choices[0].text;
-        // Send the image URL to the user
+        const imageURL = dalleResponse.data.choices[0].message.content;
         axios.get(imageURL, { responseType: 'stream' }).then((response) => {
           response.data.pipe(fs.createWriteStream('generated-image.png'));
           message.reply('Here is the generated image:');
-          message.reply({ url: 'generated-image.png' }); // Send the generated image
+          message.reply({ url: 'generated-image.png' });
         });
       } catch (error) {
         console.error('Error generating image with DALL-E:', error);
         message.reply('An error occurred while generating the image.');
       }
-    } else if (userMessage === '!broad') {
-      // Admin broadcast command
-      adminPhoneNumber = message.from;
-      askForBroadcastMessage();
     } else {
-      // If the user's message doesn't match any specific patterns, send a welcome message
-      message.reply('Welcome to our WhatsApp bot. How can I assist you today?');
+      message.reply({
+        url: 'https://drive.google.com/file/d/1xA7mtLroQ8-IbOc1bL_RMR5q3OWkpZQs',
+        caption: '📌 Selamat Datang 📌\n\nProjek ini ialah projek prototaip untuk Pertandingan STEM untuk tahun yang akan datang.\nProjek: Lumina Ai\nGuru Pembimbing: Cg Viktoria\nAhli Kumpulan:\n- Darwin [ Developer ]\n- Odelia [ Beta Tester ]\n- Arvina [ Project Planner ]\n——Version: BETA@^0.0.1——\n\n⚠️ Disebabkan penggunaan server yang dihadkan, projek ini akan diluar talian pada masa tertentu. Kami akan akan berusaha untuk mengatasi masalah ini pada masa akan datang:\n\n- Isnin, Selasa, Rabu, Khamis, Jumaat ( Offline )\n- Ahad, Sabtu [8:00PM~10PM]\n——————————————\n[Online Everyday]\nLumina Ai Telegram:\n- t.me/LuminaAiBot',
+      });
     }
   }
 });
@@ -105,7 +104,7 @@ client.on('auth_failure', () => {
 
 client.on('disconnected', (reason) => {
   console.error('Client was disconnected:', reason);
-  fs.unlinkSync('./session.json');
+  fs.unlinkSync('/workspace/LuminaWhatsapp/session.json');
   client.initialize();
 });
 
@@ -150,3 +149,4 @@ function broadcastMessageToUsers(message) {
     });
   });
 }
+const { MessageMedia } = require('whatsapp-web.js');
